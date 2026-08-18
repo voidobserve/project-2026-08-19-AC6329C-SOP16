@@ -1,0 +1,34 @@
+objs/apps/common/third_party_profile/tuya_protocol/extern_components/mbedtls/aes.c.o: \
+  ../../../../apps/common/third_party_profile/tuya_protocol/extern_components/mbedtls/aes.c \
+  ../../../../apps/common/third_party_profile/tuya_protocol/extern_components/mbedtls/aes.h \
+  C:/JL/pi32/q32s-include\stdint.h \
+  C:/JL/pi32/q32s-include\machine/_default_types.h \
+  C:/JL/pi32/q32s-include\sys/features.h \
+  C:/JL/pi32/q32s-include\sys/_intsup.h \
+  C:/JL/pi32/q32s-include\sys/_stdint.h \
+  ../../../../apps/spp_and_le/include\app_config.h \
+  ../../../../apps/spp_and_le/board/bd19\board_config.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac632n_demo_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac632n_demo_global_build_cfg.h \
+  ../../../../apps/common/device/usb\usb_std_class_def.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6321a_demo_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6321a_demo_global_build_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6323a_demo_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6323a_demo_global_build_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6328a_demo_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6328a_demo_global_build_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6328b_dongle_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6328b_dongle_global_build_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6329b_demo_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6329b_demo_global_build_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6329c_demo_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6329c_demo_global_build_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6329e_demo_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6329e_demo_global_build_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6329f_demo_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6329f_demo_global_build_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6323a_fmy_cfg.h \
+  ../../../../apps/spp_and_le/board/bd19/board_ac6323a_fmy_global_build_cfg.h \
+  ../../../../apps/common/device/usb\usb_common_def.h \
+  ../../../../include_lib/btctrler\btcontroller_mode.h \
+  ../../../../apps/spp_and_le/include/user_cfg_id.h
