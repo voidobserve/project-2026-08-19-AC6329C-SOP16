@@ -2006,6 +2006,10 @@ uint16_t close_effect(void)
 }
 
 
+/* [已屏蔽-死代码] multi_dot_running() 无任何调用点，且内部 counter_mode_step %= 5
+   存在与 aoweisi_dot_running1/2 相同的赋值钳位缺陷(段长%5==4时冻结)。
+   现用 #if 0 屏蔽，保留源码以便将来需要时查阅；若要启用请先修复该缺陷。 */
+#if 0
 /* 多个点跑马 ，点和点直接固定间隔5，支持每个点不同颜色，支持设置背景色*/
 // _seg->colors[0] 马仔的颜色
 // _seg->colors[1] 最后一个颜色为背景色
@@ -2057,7 +2061,13 @@ uint16_t multi_dot_running(void)
   _seg_rt->counter_mode_step = (_seg_rt->counter_mode_step + 1) % _seg_len;
   return (_seg->speed );
 }
+#endif /* multi_dot_running 死代码屏蔽结束 */
 
+
+/* 跑马前景色换色节拍：每隔多少帧切换一次前景色。
+   两段(中间28/两边84)都用公共帧计数器 counter_mode_call 推导前景色索引，
+   与各自段长无关，保证中间与两边同步换色。 */
+#define DOT_RUNNING_COLOR_HOLD_FRAMES   15
 
 uint16_t aoweisi_dot_running1(void)
 {
@@ -2079,7 +2089,8 @@ uint16_t aoweisi_dot_running1(void)
         else
         {
           /* 构造背景色 */
-            if (_seg_rt->counter_mode_step %= 5)
+            /* 修正: 原为 %= 5 (赋值)会把计数器钳位到0-4导致段长%5==4时冻结, 改为取模判断 */
+            if (_seg_rt->counter_mode_step % 5 == 0)
             {
                 _seg_rt->aux_param3 = 0;
             }
@@ -2099,16 +2110,10 @@ uint16_t aoweisi_dot_running1(void)
     }
     _seg_rt->counter_mode_step = (_seg_rt->counter_mode_step + 1) % _seg_len;
     // printf("_seg_rt->counter_mode_step =%d",_seg_rt->counter_mode_step);
-    if (_seg_rt->counter_mode_step >= 6)
-    {
-        _seg_rt->aux_param++;
-        if (_seg_rt->aux_param == 3)
-        {
-            _seg_rt->aux_param = 0;
-            _seg_rt->aux_param2_ex++;
-            _seg_rt->aux_param2_ex %= _seg->c_n - 1;
-        }
-    }
+
+    /* 用公共帧计数器决定前景色, 保证与段2(两边)同步换色 */
+    _seg_rt->aux_param2_ex = (uint16_t)((_seg_rt->counter_mode_call / DOT_RUNNING_COLOR_HOLD_FRAMES) % (_seg->c_n - 1));
+
     return (_seg->speed);
 }
 
@@ -2130,7 +2135,8 @@ uint16_t aoweisi_dot_running2(void)
         else
         {
           /* 构造背景色 */
-            if (_seg_rt->rgbw_counter_mode_step %= 5)
+            /* 修正: 原为 %= 5 (赋值)会把计数器钳位到0-4导致段长%5==4(如84)时冻结, 改为取模判断 */
+            if (_seg_rt->rgbw_counter_mode_step % 5 == 0)
             {
                 _seg_rt->aux_param3 = 0;
             }
@@ -2150,16 +2156,9 @@ uint16_t aoweisi_dot_running2(void)
     }
     _seg_rt->rgbw_counter_mode_step = (_seg_rt->rgbw_counter_mode_step + 1) % _seg_len;
 
-    if (_seg_rt->rgbw_counter_mode_step >= 6)
-    {
-        _seg_rt->aux_param++;
-        if (_seg_rt->aux_param == 3)
-        {
-            _seg_rt->aux_param = 0;
-            _seg_rt->aux_param2_ex++;
-            _seg_rt->aux_param2_ex %= _seg->c_n - 1;
-        }
-    }
+    /* 用公共帧计数器决定前景色, 保证与段1(中间)同步换色 */
+    _seg_rt->aux_param2_ex = (uint16_t)((_seg_rt->counter_mode_call / DOT_RUNNING_COLOR_HOLD_FRAMES) % (_seg->c_n - 1));
+
     return (_seg->speed);
 }
 
