@@ -8,5 +8,8 @@
         "led_strip_voice.h": "c",
         "includes.h": "c",
         "Adafruit_NeoPixel.H": "cpp"
-    }
+    },
+    "taskManager.favorites": [
+        "project-2026-08-19-AC6329C-SOP16/Workspace/ac632n_spp_and_le"
+    ]
 }
