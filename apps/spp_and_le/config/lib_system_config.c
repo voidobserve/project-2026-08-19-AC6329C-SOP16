@@ -17,7 +17,7 @@
 
 
 ///打印是否时间打印信息
-const int config_printf_time         = 1;
+const int config_printf_time         = 0;
 
 ///异常中断，asser打印开启
 #ifdef CONFIG_RELEASE_ENABLE

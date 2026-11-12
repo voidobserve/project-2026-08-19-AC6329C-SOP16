@@ -81,3 +81,6 @@ Release/
 /cpu/bd19/tools/download/data_trans/jl_isd.bin
 /cpu/bd19/tools/download/data_trans/jl_isd.fw
 /cpu/bd19/tools/download/data_trans/update.ufw
+
+#
+.agents/

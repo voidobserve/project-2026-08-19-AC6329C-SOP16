@@ -19,6 +19,7 @@
 #define NO_CONFIG_PORT						(-1)
 
 // #define USER_DEBUG
+#define USER_DEBUG_LOG_ENABLE 0
 
 //*********************************************************************************//
 //                                 UART配置                                        //
@@ -32,6 +33,12 @@
 #undef TCFG_UART0_ENABLE
 #define TCFG_UART0_ENABLE					ENABLE_THIS_MOUDLE
 #endif
+
+#if USER_DEBUG_LOG_ENABLE
+#undef TCFG_UART0_ENABLE
+#define TCFG_UART0_ENABLE					ENABLE_THIS_MOUDLE
+#endif
+
 
 #define UART_DB_TX_PIN                      IO_PORTA_01                            //AT_CHART串口
 #define UART_DB_RX_PIN                      IO_PORTA_02

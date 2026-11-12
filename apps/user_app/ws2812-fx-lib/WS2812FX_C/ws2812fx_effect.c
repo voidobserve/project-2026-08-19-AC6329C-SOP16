@@ -10,6 +10,20 @@ extern  Segment* _seg;
 extern  uint16_t _seg_len;
 extern Segment_runtime* _seg_rt;
 
+/* 段内相对偏移安全写：off 相对 _seg->start，超出 [0, _seg_len) 直接丢弃。
+   多段共用一条像素缓冲，效果里一律用相对偏移，避免写到相邻段或段外。 */
+static void seg_set_pixel(uint16_t off, uint32_t c)
+{
+  if(off < _seg_len)
+    WS2812FX_setPixelColor(_seg->start + off, c);
+}
+
+static void seg_set_pixel_rgbw(uint16_t off, uint8_t r, uint8_t g, uint8_t b, uint8_t w)
+{
+  if(off < _seg_len)
+    WS2812FX_setPixelColor_rgbw(_seg->start + off, r, g, b, w);
+}
+
 
 
 void clean_step(void)
@@ -242,12 +256,14 @@ uint16_t WS2812FX_mode_single_block_scan(void)
   uint8_t j;
   uint32_t c;
 
-  if(size > (_seg->stop - _seg->start))
+  if(size == 0)                 //段大小下发为 0 时内层 for 不执行，会让下面的 while 死循环
+    size = 1;
+  if(size > (_seg_len - 1))
     return 0;
 
   _seg_rt->counter_mode_step = 0;
   _seg_rt->aux_param = 0;
-  while(_seg_rt->counter_mode_step  < _seg->stop)
+  while(_seg_rt->counter_mode_step  < _seg_len)
   {
     for(j = 0; j < size; j++)
     {
@@ -260,7 +276,7 @@ uint16_t WS2812FX_mode_single_block_scan(void)
         WS2812FX_setPixelColor( _seg->stop - _seg_rt->counter_mode_step, _seg->colors[_seg_rt->aux_param]);
       }
       _seg_rt->counter_mode_step++;
-      if(_seg_rt->counter_mode_step  > _seg->stop)
+      if(_seg_rt->counter_mode_step  >= _seg_len)
       {
         break;
       }
@@ -301,9 +317,9 @@ uint16_t WS2812FX_mode_multi_block_scan(void)
   /* 构建背景颜色 */
   if(_seg_rt->counter_mode_step == 0)
   {
-    while(_seg_rt->counter_mode_step <= _seg->stop)
+    while(_seg_rt->counter_mode_step < _seg_len)
     {
-      for(j = 0; (j < size) && (_seg_rt->counter_mode_step <= _seg->stop); j++)
+      for(j = 0; (j < size) && (_seg_rt->counter_mode_step < _seg_len); j++)
       {
         WS2812FX_setPixelColor( _seg->start + _seg_rt->counter_mode_step, _seg->colors[_seg_rt->aux_param]);
         _seg_rt->counter_mode_step++;
@@ -426,6 +442,8 @@ uint16_t WS2812FX_mode_mutil_fade(void)
 
   if(size > (_seg->stop - _seg->start) && size== 0)
     return 0;
+  if(size == 0)                 //段大小下发为 0 时内层 for 不执行，会让下面的 while 死循环
+    size = 1;
 
   if(lum > 255) lum = 511 - lum; // lum = 0 -> 255 -> 0
   _seg_rt->aux_param = 0;
@@ -438,7 +456,7 @@ uint16_t WS2812FX_mode_mutil_fade(void)
 
   }
 
-    while(_seg_rt->aux_param2_ex  < _seg->stop)
+    while(_seg_rt->aux_param2_ex  < _seg_len)
     {
       color0 = _seg->colors[cnt0];
       cnt0++;
@@ -452,7 +470,7 @@ uint16_t WS2812FX_mode_mutil_fade(void)
         WS2812FX_setPixelColor( _seg->start + _seg_rt->aux_param2_ex, \
                                 color);
         _seg_rt->aux_param2_ex++;
-        if(_seg_rt->aux_param2_ex  > _seg->stop)
+        if(_seg_rt->aux_param2_ex  >= _seg_len)
         {
           break;
         }
@@ -517,11 +535,13 @@ uint16_t WS2812FX_mode_mutil_breath(void)
   }
   if(size > (_seg->stop - _seg->start))
     return 0;
+  if(size == 0)                 //段大小下发为 0 时内层 for 不执行，会让下面的 while 死循环
+    size = 1;
   _seg_rt->counter_mode_step = 0;
   _seg_rt->aux_param = 0;
-  while(_seg_rt->counter_mode_step <= _seg->stop)
+  while(_seg_rt->counter_mode_step < _seg_len)
   {
-    for(j = 0; (j < size) && (_seg_rt->counter_mode_step <= _seg->stop); j++)
+    for(j = 0; (j < size) && (_seg_rt->counter_mode_step < _seg_len); j++)
     {
       color =  WS2812FX_color_blend( 0,_seg->colors[_seg_rt->aux_param], lum);
       WS2812FX_setPixelColor( _seg->start + _seg_rt->counter_mode_step, color);
@@ -562,9 +582,9 @@ uint16_t WS2812FX_mode_mutil_twihkle(void)
   _seg_rt->aux_param = 0;
   if(_seg_rt->aux_param3)
   {
-      while(_seg_rt->counter_mode_step <= _seg->stop)
+      while(_seg_rt->counter_mode_step < _seg_len)
     {
-      for(j = 0; (j < size) && (_seg_rt->counter_mode_step <= _seg->stop); j++)
+      for(j = 0; (j < size) && (_seg_rt->counter_mode_step < _seg_len); j++)
       {
         WS2812FX_setPixelColor( _seg->start + _seg_rt->counter_mode_step, _seg->colors[_seg_rt->aux_param]);
         _seg_rt->counter_mode_step++;
@@ -1174,7 +1194,7 @@ uint16_t music_star(void)
     {
       int flicker = WS2812FX_random8_lim(lum);
 
-      WS2812FX_setPixelColor_rgbw(WS2812FX_random16_lim(_seg_len), max(r - flicker, 0), max(g - flicker, 0), max(b - flicker, 0), max(w - flicker, 0));
+      WS2812FX_setPixelColor_rgbw(_seg->start + WS2812FX_random16_lim(_seg_len), max(r - flicker, 0), max(g - flicker, 0), max(b - flicker, 0), max(w - flicker, 0));
     }
   }
   SET_CYCLE;
@@ -1205,7 +1225,7 @@ uint16_t music_rainbow_flash(void)
     for(i=0; i<_seg_len; i++) 
     {
       uint32_t color = WS2812FX_color_wheel(((i * 256 / _seg_len) + _seg_rt->counter_mode_step) & 0xFF);
-      WS2812FX_setPixelColor( i, color);
+      WS2812FX_setPixelColor( _seg->start + i, color);
         
     }
 
@@ -1275,10 +1295,10 @@ uint16_t music_multi_c_flow(void)
     /* 构建背景颜色 */
     if(_seg_rt->counter_mode_step == 0)
     {
-      while(_seg_rt->counter_mode_step <= _seg->stop)
+      while(_seg_rt->counter_mode_step < _seg_len)
       {
         _seg->colors[0]= WS2812FX_color_wheel(WS2812FX_get_random_wheel_index(WS2812FX_random8()));
-        for(j = 0; (j < size) && (_seg_rt->counter_mode_step <= _seg->stop); j++)
+        for(j = 0; (j < size) && (_seg_rt->counter_mode_step < _seg_len); j++)
         {
           WS2812FX_setPixelColor( _seg->start + _seg_rt->counter_mode_step, _seg->colors[0]);
           _seg_rt->counter_mode_step++;
@@ -1322,8 +1342,8 @@ uint16_t music_oc_2(void)
   for(i=_seg_len/2; i< m_oc.c_pos; i++)
   {
     uint32_t color = WS2812FX_color_wheel(((i * 256 / _seg_len) + _seg_rt->counter_mode_step) & 0xFF);
-    WS2812FX_setPixelColor(  i, color);
-		WS2812FX_setPixelColor(  _seg_len/2 - (i - _seg_len/2) -1, color);
+    seg_set_pixel((uint16_t)i, color);            //段内相对偏移，中间向两端张开
+    seg_set_pixel((uint16_t)(_seg_len - i - 1), color);
 
   }
   _seg_rt->counter_mode_step = (_seg_rt->counter_mode_step + 1) & 0xFF;
@@ -1348,8 +1368,8 @@ uint16_t music_oc_2(void)
   }
   else
   {
-    WS2812FX_setPixelColor( m_oc.c_pos, 0);
-    WS2812FX_setPixelColor( m_oc.c_pos1, 0);
+    seg_set_pixel((uint16_t)m_oc.c_pos, 0);
+    seg_set_pixel((uint16_t)m_oc.c_pos1, 0);
 
     if(m_oc.c_pos > _seg_len/2)
     {
@@ -1377,9 +1397,9 @@ uint32_t color;
   // 倒序上升是：最长 ~ 一半
   uint8_t i,j;
 
-   if(m_oc.trg > (USER_WS2812_SEGMENT_1_LEN + 1) / 2)
+   if(m_oc.trg > _seg_len/2 + 1)   //+1：两端合拢到最中间那颗时整段才算铺满
   {
-    m_oc.trg = (USER_WS2812_SEGMENT_1_LEN + 1) / 2;
+    m_oc.trg = _seg_len/2 + 1;
   }
   /* 设置初值 */
   if(_seg_rt->aux_param==0)
@@ -1416,11 +1436,10 @@ uint32_t color;
     }
 
 
-    WS2812FX_setPixelColor( i, color);
-    WS2812FX_setPixelColor( _seg_len - i + 1, color);
+    seg_set_pixel((uint16_t)(i - 1), color);          //段首 -> 中间
+    seg_set_pixel((uint16_t)(_seg_len - i), color);   //段尾 -> 中间
 
   }
-
     _seg_rt->counter_mode_step = (_seg_rt->counter_mode_step + 1) & 0xFF;
     if(_seg_rt->counter_mode_step == 0) SET_CYCLE;
   /* 上升处理 */
@@ -1444,8 +1463,8 @@ uint32_t color;
   /* 下降处理 */
   else
   {
-    WS2812FX_setPixelColor( m_oc.c_pos, 0);
-    WS2812FX_setPixelColor( m_oc.c_pos1, 0);
+    seg_set_pixel((uint16_t)(m_oc.c_pos - 1), 0);
+    seg_set_pixel((uint16_t)(m_oc.c_pos1 - 1), 0);
 
     if(m_oc.c_pos > 1)//计算顺序下降位置
     {
@@ -1477,9 +1496,9 @@ uint16_t music_2_side_oc2(void)
   // 倒序上升是：最长 ~ 一半
   uint8_t i,j;
 
-   if(m_oc2.trg > (USER_WS2812_SEGMENT_2_LEN + 1) / 2)
+   if(m_oc2.trg > _seg_len/2 + 1)   //+1：两端合拢到最中间那颗时整段才算铺满
   {
-    m_oc2.trg = (USER_WS2812_SEGMENT_2_LEN + 1) / 2;
+    m_oc2.trg = _seg_len/2 + 1;
   }
   /* 设置初值 */
   if(_seg_rt->aux_param==0)
@@ -1508,9 +1527,9 @@ uint16_t music_2_side_oc2(void)
       color =   RED;
     }
 
-    //需要快跳过第一段的灯带数量
-    WS2812FX_setPixelColor( i+_seg->start, color);
-    WS2812FX_setPixelColor( _seg_len - (i-_seg->start) + 1, color);
+    //段内相对偏移，两段都适用
+    seg_set_pixel((uint16_t)(i - 1), color);          //段首 -> 中间
+    seg_set_pixel((uint16_t)(_seg_len - i), color);   //段尾 -> 中间
 
   }
 
@@ -1537,8 +1556,8 @@ uint16_t music_2_side_oc2(void)
   /* 下降处理 */
   else
   {
-    WS2812FX_setPixelColor( m_oc2.c_pos+_seg->start, 0);
-    WS2812FX_setPixelColor( m_oc2.c_pos1+_seg->start, 0);
+    seg_set_pixel((uint16_t)(m_oc2.c_pos - 1), 0);
+    seg_set_pixel((uint16_t)(m_oc2.c_pos1 - 1), 0);
 
     if(m_oc2.c_pos > 1)//计算顺序下降位置
     {
@@ -1571,7 +1590,7 @@ uint16_t music_fs(void) {
   for(i=0; i< m_fs.c_pos; i++) //上升点亮灯带
   {
     color = WS2812FX_color_wheel(((i * 256 / _seg_len) + _seg_rt->counter_mode_step) & 0xFF);
-    WS2812FX_setPixelColor( i, color);
+    seg_set_pixel((uint16_t)i, color);
     // if(m_fs.top_pos<i)    //点亮顶端白点
     // WS2812FX_setPixelColor( i+1, WHITE);
 
@@ -1604,8 +1623,8 @@ uint16_t music_fs(void) {
     if(m_fs.fall_sp >= 3)
     {
       m_fs.fall_sp=0;
-			if(m_fs.c_pos > 0) m_fs.c_pos--;
-      WS2812FX_setPixelColor( m_fs.c_pos, 0);
+      if(m_fs.c_pos > 0) m_fs.c_pos--;
+      seg_set_pixel((uint16_t)m_fs.c_pos, 0);
     }
     m_fs.fall_sp++;
   }
@@ -1623,9 +1642,9 @@ uint16_t music_fs(void) {
   {
     if(m_fs.top_sp>=10)
     {
-      WS2812FX_setPixelColor( m_fs.top_pos+2, BLACK);
-      WS2812FX_setPixelColor( m_fs.top_pos+1, color_top);
-      WS2812FX_setPixelColor( m_fs.top_pos, color_top);
+      seg_set_pixel((uint16_t)(m_fs.top_pos + 2), BLACK);
+      seg_set_pixel((uint16_t)(m_fs.top_pos + 1), color_top);
+      seg_set_pixel((uint16_t)m_fs.top_pos, color_top);
       m_fs.top_sp=0;
       m_fs.top_pos--;
     }
@@ -1644,7 +1663,7 @@ uint16_t music_fs_bc(void) {
   for(i=0; i< m_fs.c_pos; i++) //上升点亮灯带
   {
     uint32_t color = WS2812FX_color_wheel(((i * 256 / _seg_len) + _seg_rt->counter_mode_step) & 0xFF);
-    WS2812FX_setPixelColor( i, color);
+    seg_set_pixel((uint16_t)i, color);
 
   }
   _seg_rt->counter_mode_step = (_seg_rt->counter_mode_step + 1) & 0xFF;
@@ -1944,7 +1963,7 @@ uint16_t open_effect(void)
 
 
   _seg_rt->counter_mode_step++;
-  _seg_rt->counter_mode_step %= _seg_len/2 -1;
+  _seg_rt->counter_mode_step %= (_seg_len + 1) / 2;   //两端各走半段，奇数段长时中间那颗多写一次，保证整段都被清到
   if(_seg_rt->counter_mode_step==0)
   {
     _seg_rt->aux_param++;
@@ -1969,7 +1988,7 @@ uint16_t fu_open_effect(void)
 
 
   _seg_rt->counter_mode_step++;
-  _seg_rt->counter_mode_step %= _seg_len/2;
+  _seg_rt->counter_mode_step %= (_seg_len + 1) / 2;   //两端各走半段，奇数段长时中间那颗多写一次
   if(_seg_rt->counter_mode_step==0)
   {
     _seg_rt->aux_param++;
@@ -1996,10 +2015,10 @@ uint16_t close_effect(void)
     _seg_rt->aux_param %= _seg->c_n;
   }
   WS2812FX_setPixelColor( _seg->start + _seg_rt->counter_mode_step, _seg->colors[_seg_rt->aux_param]);
-  WS2812FX_setPixelColor( _seg->stop - _seg_rt->counter_mode_step - 1, _seg->colors[_seg_rt->aux_param] );
+  WS2812FX_setPixelColor( _seg->stop - _seg_rt->counter_mode_step, _seg->colors[_seg_rt->aux_param]);
 
   _seg_rt->counter_mode_step++;
-  _seg_rt->counter_mode_step %= _seg_len/2;
+  _seg_rt->counter_mode_step %= (_seg_len + 1) / 2;   //两端各走半段，段尾那颗必须被清到
 
 
   return (_seg->speed );
@@ -2540,7 +2559,8 @@ uint16_t jump_meteor(void)
       b1 = b * rate[i] / 100;
       w1 = w * rate[i] / 100;
       // if(_seg_rt->counter_mode_step < 15)
-      WS2812FX_setPixelColor_rgbw(_seg_rt->counter_mode_step - m, r1, g1, b1, w1);  //颜色值
+      if((_seg_rt->counter_mode_step >= m) && ((_seg_rt->counter_mode_step - m) < _seg_len))
+        seg_set_pixel_rgbw((uint16_t)(_seg_rt->counter_mode_step - m), r1, g1, b1, w1);  //颜色值
     }
   }
 
@@ -2658,7 +2678,8 @@ uint16_t gradual_meteor(void)
         g1 = g * rate[i] / 100;
         b1 = b * rate[i] / 100;
         w1 = w * rate[i] / 100;
-        WS2812FX_setPixelColor_rgbw(_seg_rt->counter_mode_step - n , r1, g1, b1, w1);  //颜色值
+        if((_seg_rt->counter_mode_step >= n) && ((_seg_rt->counter_mode_step - n) < _seg_len))
+          seg_set_pixel_rgbw((uint16_t)(_seg_rt->counter_mode_step - n), r1, g1, b1, w1);  //颜色值
       }
    }
 
@@ -3626,9 +3647,9 @@ uint16_t multi_superposition(void)
     {
 
       if(j < _seg_rt->counter_mode_step)
-        WS2812FX_setPixelColor_rgbw(_seg_len - j-1, bf_r, bf_g, bf_b, bf_w);
+        seg_set_pixel_rgbw((uint16_t)(_seg_len - j - 1), bf_r, bf_g, bf_b, bf_w);
       else if(j == _seg_rt->counter_mode_step)
-        WS2812FX_setPixelColor_rgbw(_seg_len - j-1, r, g, b, w);
+        seg_set_pixel_rgbw((uint16_t)(_seg_len - j - 1), r, g, b, w);
     
     }
     _seg_rt->counter_mode_step++; 
@@ -3666,9 +3687,9 @@ uint16_t multi_superposition(void)
       {
 
         if(j < _seg_rt->counter_mode_step)
-          WS2812FX_setPixelColor_rgbw(j, bf_r, bf_g, bf_b, bf_w);
+          seg_set_pixel_rgbw((uint16_t)j, bf_r, bf_g, bf_b, bf_w);
         else if(j == _seg_rt->counter_mode_step)
-          WS2812FX_setPixelColor_rgbw(j, r, g, b, w);
+          seg_set_pixel_rgbw((uint16_t)j, r, g, b, w);
       
       }
       _seg_rt->counter_mode_step++;

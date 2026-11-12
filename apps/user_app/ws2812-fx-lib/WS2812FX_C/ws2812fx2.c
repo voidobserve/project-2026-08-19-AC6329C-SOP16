@@ -514,6 +514,16 @@ void WS2812FX_setSegmentsInactive(void)
   memset(_active_segments, INACTIVE_SEGMENT, _active_segments_len);
 }
 
+/* 切换效果前调用：
+   1) 所有段失活，避免上一效果继续在没被重新配置的段上跑(如只配了段1的模式)；
+   2) 清空像素缓冲(不发帧，所以不会闪黑)，避免新效果首帧只画一部分时露出上一效果的残色。
+   调用后各效果函数必须自己重新 setSegment 激活需要的段。 */
+void WS2812FX_clearAllSegments(void)
+{
+  WS2812FX_setSegmentsInactive();
+  Adafruit_NeoPixel_clear();
+}
+
 void WS2812FX_resetSegmentRuntimes() {
   memset(_segment_runtimes, 0, _active_segments_len * sizeof(Segment_runtime));
   

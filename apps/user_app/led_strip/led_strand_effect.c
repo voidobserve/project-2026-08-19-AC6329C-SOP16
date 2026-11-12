@@ -2523,8 +2523,8 @@ void music_effect(void)
 
     extern void set_music_s_m(u8 m);
 
-    void *p = set_music_s_m;
-    void *p2 = set_music_s_m;
+    void *p = &music_star;
+    void *p2 = NULL;
     switch (fc_effect.music.m)
     {
     case 0: //能量1
@@ -2575,6 +2575,12 @@ void music_effect(void)
         break;
     }
 
+    /* 没有单独提供第二路效果的模式，两段复用同一个效果
+       (效果内部已改成按段相对寻址，两段可以同时跑)。原先 p2 是一个 void 函数的地址，
+       导致长边整段没有任何像素输出。 */
+    if(p2 == NULL)
+        p2 = p;
+
     WS2812FX_setSegment_colorOptions(
         USER_SEGMENT1_INDEX,                            // 第N段
         user_led_segments[USER_SEGMENT1_INDEX].start,   // 起始位置
@@ -2604,6 +2610,10 @@ void set_fc_effect(void)
 {
     if (fc_effect.on_off_flag == DEVICE_ON)
     {
+        /* 切换效果前先清干净：让上一效果的所有段失活 + 清空像素缓冲(不发帧，不会闪黑)，
+           否则没被新效果重新配置的段会继续跑上一个动画，或新效果首帧只画一部分时露出旧颜色 */
+        WS2812FX_clearAllSegments();
+
         switch (fc_effect.Now_state)
         {
         case IS_light_scene:

@@ -390,7 +390,7 @@ uint16_t WS2812FX_fire_flicker(int rev_intensity) {
   {
     int flicker = WS2812FX_random8_lim(lum);
 
-    WS2812FX_setPixelColor_rgbw(WS2812FX_random16_lim(_seg_len), max(r - flicker, 0), max(g - flicker, 0), max(b - flicker, 0), max(w - flicker, 0));
+    WS2812FX_setPixelColor_rgbw(_seg->start + WS2812FX_random16_lim(_seg_len), max(r - flicker, 0), max(g - flicker, 0), max(b - flicker, 0), max(w - flicker, 0));
   }
 
   SET_CYCLE;

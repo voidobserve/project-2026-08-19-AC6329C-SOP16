@@ -151,6 +151,7 @@ void
   WS2812FX_pause(void),
   WS2812FX_resume(void),
   WS2812FX_strip_off(void),
+  WS2812FX_clearAllSegments(void),
   WS2812FX_fade_out(void),
   WS2812FX_fade_out_targetColor(uint32_t),
   WS2812FX_setMode(mode_ptr m),
