@@ -4,14 +4,13 @@
 #include "save_flash.h"
 #include "rf433.h"
 
-
-#define CFG_USER_LED_LEDGTH_DATA    3
+#define CFG_USER_LED_LEDGTH_DATA 3
 
 extern sys_cb_t sys_cb;
 extern u32 RF433_CODE;
 extern u32 RF433_CODE2;
 
-u8 ble_state = 1; //默认开启BLE模块
+u8 ble_state = 1; // 默认开启BLE模块
 
 /*******************************************************************************************************
 **函数名：上电读取FLASH里保存的指令数据
@@ -32,13 +31,13 @@ void read_flash_device_status_init(void)
     save_flash3.rf433_code = 0xFFFFFFFE;
     save_flash3.rf433_code2 = 0xFFFFFFFE;
 
-    res = syscfg_read(CFG_USER_LED_LEDGTH_DATA,(u8 *)(&save_flash3), sizeof(save_flash_t));
+    res = syscfg_read(CFG_USER_LED_LEDGTH_DATA, (u8 *)(&save_flash3), sizeof(save_flash_t));
 
-    if(save_flash3.header != HEADER_VALUE)  //第一次上电
+    if (save_flash3.header != HEADER_VALUE) // 第一次上电
     {
         fc_data_init();
-        ble_state = 1;//默认开启BLE模块
-        
+        ble_state = 1; // 默认开启BLE模块
+
         ble_state = save_flash3.ble_state;
         RF433_CODE = save_flash3.rf433_code;
         RF433_CODE2 = save_flash3.rf433_code2;
@@ -46,23 +45,26 @@ void read_flash_device_status_init(void)
     else
     {
         printf("\n flash_size=%d", sizeof(fc_effect_t));
-        memcpy( (u8*)(&fc_effect), (u8*)(&save_flash3.fc_save) , sizeof(fc_effect_t));
-        
+        memcpy((u8 *)(&fc_effect), (u8 *)(&save_flash3.fc_save), sizeof(fc_effect_t));
+
         ble_state = save_flash3.ble_state;
         RF433_CODE = save_flash3.rf433_code;
         RF433_CODE2 = save_flash3.rf433_code2;
     }
-        printf("vm read rgbw on_off: l%d , n%d\n", save_flash3.fc_save.last_rgbw_on_off_flag, save_flash3.fc_save.rgbw_on_off_flag);
-        printf("vm read led  on_off: l%d , n%d\n", save_flash3.fc_save.last_led_on_off_flag, save_flash3.fc_save.led_on_off_flag);
-        printf("vm read led1 on_off: l%d , n%d\n", save_flash3.fc_save.last_led1_on_off_flag, save_flash3.fc_save.led1_on_off_flag);
+    printf("vm read rgbw on_off: l%d , n%d\n", save_flash3.fc_save.last_rgbw_on_off_flag, save_flash3.fc_save.rgbw_on_off_flag);
+    printf("vm read led  on_off: l%d , n%d\n", save_flash3.fc_save.last_led_on_off_flag, save_flash3.fc_save.led_on_off_flag);
+    printf("vm read led1 on_off: l%d , n%d\n", save_flash3.fc_save.last_led1_on_off_flag, save_flash3.fc_save.led1_on_off_flag);
 
 #ifdef USER_DEBUG
     RF433_CODE = 0xFFFF;
     RF433_CODE2 = 0xFFFF;
 #endif
 #endif
-}
 
+    /* 升级会保留VM区，恢复出来的灯点数是旧固件写的（例如短边28颗时存的是113），
+       这里按当前固件的物理灯数重新固定，否则WS2812FX的numLEDs会比实际灯数小、末尾灯珠不亮 */
+    fc_led_num_fix();
+}
 
 // 把用户数据写到区域3
 #if 0
@@ -81,7 +83,7 @@ void save_user_data_area3(void)
 #else
 
 // static uint32_t save_user_data_area3_timeout_p100ms_count = 0;  // 写FLASH超时自动保存计数
-static uint32_t save_user_data_area3_timeout_p10ms_count = 0;  // 写FLASH超时自动保存计数
+static uint32_t save_user_data_area3_timeout_p10ms_count = 0; // 写FLASH超时自动保存计数
 
 void save_user_data_area3(void)
 {
@@ -110,24 +112,6 @@ void save_user_data_area3_deal(void)
 }
 #endif
 
-
 void read_user_data_area3(void)
 {
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

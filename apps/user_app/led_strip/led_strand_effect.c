@@ -76,6 +76,9 @@ const u32 fc_static_map[MAX_STATIC_N] =
 
 
 
+/* 物理灯数上限：段0(七彩) + 段1(幻彩1) + 段2(幻彩2)，由板级配置决定，编译期常量 */
+#define FC_LED_NUM_MAX      (USER_WS2812_SEGMENT_0_LEN + USER_WS2812_SEGMENT_1_LEN + USER_WS2812_SEGMENT_2_LEN)
+
 // 效果数据初始化
 void fc_data_init(void)
 {
@@ -89,8 +92,8 @@ void fc_data_init(void)
     fc_effect.last_led_on_off_flag = DEVICE_ON;
     fc_effect.last_led1_on_off_flag = DEVICE_ON;
 
-    fc_effect.led_num_max = (1 + USER_WS2812_SEGMENT_1_LEN + USER_WS2812_SEGMENT_2_LEN);  //第一路幻彩 rgb+19+60个幻彩灯
-    fc_effect.led_num = (1 + USER_WS2812_SEGMENT_1_LEN + USER_WS2812_SEGMENT_2_LEN);  //第一路幻彩 rgb+19+60个幻彩灯
+    fc_effect.led_num_max = FC_LED_NUM_MAX;  //段0+幻彩1+幻彩2
+    fc_effect.led_num = FC_LED_NUM_MAX;      //段0+幻彩1+幻彩2
 
     fc_effect.Now_state = IS_light_music;
     fc_effect.custom_index = 10;
@@ -115,6 +118,20 @@ void fc_data_init(void)
     fc_effect.ex_white_light_power = 0;
     fc_effect.ex_white_light_level = WHITE_LIGHT_MAX_LEVEL;
 #endif
+}
+
+/*
+ * 上电固定灯点数：灯带长度由板级配置的物理灯数决定，不跟随VM里保存的值。
+ *
+ * 无线升级会保留VM区（lib_update_config.c: support_vm_data_keep = 1），
+ * VM里的led_num/led_num_max是旧固件写的：短边28颗的固件存的是113(1+28+84)，
+ * 升级到30颗的固件后仍按113初始化，WS2812FX/NeoPixel的numLEDs就比实际灯数小，
+ * 末尾灯珠的写操作被库直接丢弃（现象：最长那路最后2颗不亮，USB整片下载后正常）。
+ */
+void fc_led_num_fix(void)
+{
+    fc_effect.led_num_max = FC_LED_NUM_MAX;
+    fc_effect.led_num = FC_LED_NUM_MAX;
 }
 
 #ifdef PC_SERIAL_DEBUG
